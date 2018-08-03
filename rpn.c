@@ -25,28 +25,30 @@ int
 evaluate(struct token *tokens, size_t length, int *result)
 {
 	int *stack = malloc(sizeof(int) * length);
-	int top = 0;
+	int first, second, top = 0;
 	for (int i = 0; i < length; i++ ) { 
-		if (tokens[i].type == OPERAND) {
-			stack[top] = tokens[i].contents.operand;
-			top++;
-		} else { 
-			int first = stack[--top];
-			int second = stack[--top];
+		switch (tokens[i].type) {
+		case OPERAND:
+			stack[top++] = tokens[i].contents.operand;
+			break;
+		case OPERATOR:
+			first = stack[--top];
+			second = stack[--top];
 			switch (tokens[i].contents.operator) {
-				case ADD: 
-					stack[top++] = first + second;
-					break;
-				case SUBTRACT:
-					stack[top++] = first - second;
-					break;
-				case MULTIPLY:
-					stack[top++] = first * second;
-					break;
-				case DIVIDE:
-					stack[top++] = first / second;
-					break;
-			}				
+			case ADD: 
+				stack[top++] = first + second;
+				break;
+			case SUBTRACT:
+				stack[top++] = first - second;
+				break;
+			case MULTIPLY:
+				stack[top++] = first * second;
+				break;
+			case DIVIDE:
+				stack[top++] = first / second;
+				break;
+			}
+			break;
 		}
 	}
 	*result = stack[--top];
@@ -58,23 +60,34 @@ int
 main(int argc, char *argv[])
 {
 	int result;
-	struct token tokens[] = {
-		{ .type = OPERAND, .contents = { .operand = 2 }},
-		{ .type = OPERAND, .contents = { .operand = 3 }},
-		{ .type = OPERATOR, .contents = { .operator = MULTIPLY }}, 
-		{ .type = OPERAND, .contents = { .operand = 4 }},
-		{ .type = OPERATOR, .contents = { .operator = SUBTRACT }},
-		{ .type = OPERAND, .contents = { .operand = 1 }},
-		{ .type = OPERAND, .contents = { .operand = 2 }},
-		{ .type = OPERAND, .contents = { .operand = 3 }},
-		{ .type = OPERATOR, .contents = { .operator = ADD }},
-		{ .type = OPERATOR, .contents = { .operator = SUBTRACT }},
-		{ .type = OPERATOR, .contents = { .operator = DIVIDE }}
-	};
-	int expected = -2;
-	size_t len = sizeof(tokens) / sizeof(struct token); 
-	evaluate(tokens, len, &result);
-	printf("got: %d, expected: %d\n", result, expected);
+	struct token* tokens = malloc(sizeof(struct token) * argc);
+
+	for (int i = 1; i < argc; i++) {
+		switch (argv[i][0]) {
+			case '+':
+				tokens[i-1].type = OPERATOR;
+				tokens[i-1].contents.operator = ADD;
+				break;
+			case '-':
+				tokens[i-1].type = OPERATOR;
+				tokens[i-1].contents.operator = SUBTRACT;
+				break;
+			case '*':
+				tokens[i-1].type = OPERATOR;
+				tokens[i-1].contents.operator = MULTIPLY;
+				break;
+			case '/':
+				tokens[i-1].type = OPERATOR;
+				tokens[i-1].contents.operator = DIVIDE;
+				break;
+			default:
+				tokens[i-1].type = OPERAND;
+				tokens[i-1].contents.operand = atoi(argv[i]);
+				break;
+		}
+	}
+	evaluate(tokens, argc - 1, &result);
+	printf("got: %d\n", result);
 }
 
 /*
